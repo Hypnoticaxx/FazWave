@@ -1,0 +1,140 @@
+import React, { useState, useEffect } from "react";
+
+const XANO_BASE = "https://x8ki-letl-twmt.n7.xano.io/api:LtSwFmWE"; // replace with correct API group
+
+function App() {
+  const [token, setToken] = useState(null);
+  const [user, setUser] = useState(null);
+  const [tracks, setTracks] = useState([]);
+  const [playlists, setPlaylists] = useState([]);
+  const [achievements, setAchievements] = useState([]);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  // ======= Authentication =======
+  const login = async () => {
+    try {
+      const res = await fetch(`${XANO_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      setToken(data.token);
+      localStorage.setItem("token", data.token);
+      fetchUser(data.token);
+    } catch (err) {
+      console.error("Login failed:", err);
+    }
+  };
+
+  const fetchUser = async (authToken) => {
+    try {
+      const res = await fetch(`${XANO_BASE}/auth/me`, {
+        headers: { Authorization: `Bearer ${authToken}` }
+      });
+      const data = await res.json();
+      setUser(data);
+    } catch (err) {
+      console.error("Fetch user failed:", err);
+    }
+  };
+
+  // ======= Fetch Tracks =======
+  const fetchTracks = async () => {
+    try {
+      const res = await fetch(`${XANO_BASE}/track`);
+      const data = await res.json();
+      setTracks(data);
+    } catch (err) {
+      console.error("Fetch tracks failed:", err);
+    }
+  };
+
+  // ======= Fetch Playlists =======
+  const fetchPlaylists = async () => {
+    try {
+      const res = await fetch(`${XANO_BASE}/playlist`);
+      const data = await res.json();
+      setPlaylists(data);
+    } catch (err) {
+      console.error("Fetch playlists failed:", err);
+    }
+  };
+
+  // ======= Fetch Achievements =======
+  const fetchAchievements = async () => {
+    try {
+      const res = await fetch(`${XANO_BASE}/user_achievement`);
+      const data = await res.json();
+      setAchievements(data);
+    } catch (err) {
+      console.error("Fetch achievements failed:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchTracks();
+    fetchPlaylists();
+    fetchAchievements();
+  }, []);
+
+  return (
+    <div style={{ padding: "20px", fontFamily: "Arial" }}>
+      <h1>FazWave Starter</h1>
+
+      {!token ? (
+        <div>
+          <h2>Login</h2>
+          <input
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <input
+            placeholder="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button onClick={login}>Login</button>
+        </div>
+      ) : (
+        <div>
+          <h2>Welcome, {user?.display_name || "User"}</h2>
+
+          <section>
+            <h3>Tracks</h3>
+            <ul>
+              {tracks.map((t) => (
+                <li key={t.id}>
+                  {t.name} - {t.artist_name || "Unknown Artist"}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h3>Playlists</h3>
+            <ul>
+              {playlists.map((p) => (
+                <li key={p.id}>{p.name}</li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h3>Achievements</h3>
+            <ul>
+              {achievements.map((a) => (
+                <li key={a.id}>{a.name}</li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;
